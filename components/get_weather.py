@@ -1,6 +1,7 @@
 # Junseo Kang invalidid56@saefarm.com
 # get Ag-weather data from Open API from EPIS, return as Dataframe
 # get_weather(lat, long)
+import sys
 
 import requests
 import pandas as pd
@@ -15,19 +16,12 @@ config.read('config.ini')
 url = config['WEATHER']['URL']
 
 
-def get_weather(lon, lat, code='SFKR'):
+def get_weather(pnu, code='SFKR'):
     """
     :param lat:
     :param lon:
     :return:
     """
-    #
-    # Convert Coord from WGS84(LatLong) to UTM-K
-    #
-    proj_UTMK = Proj(init='epsg:5178')  # UTM-K(Bassel), 도로명주소
-    proj_WGS84 = Proj(init='epsg:4326')  # WGS84, Long-Lat
-
-    x, y = transform(proj_WGS84, proj_UTMK, lon, lat)
 
     #
     # For Each Month/Year, Read Weather Data and Append to Dataframe
@@ -51,8 +45,7 @@ def get_weather(lon, lat, code='SFKR'):
                 'numOfRows': day,
                 'pageNo': 1,
                 'type': 'json',
-                'positionX': x,
-                'positionY': y,
+                'pnuCode': pnu,
                 'month': month_to_read,
                 'yearCount': 1
             }
@@ -63,7 +56,6 @@ def get_weather(lon, lat, code='SFKR'):
             try:
                 json_ob = json.loads(content)
             except json.decoder.JSONDecodeError:
-                print('3 No Data')
                 continue
 
             body = [{key: item[key] for key in keys_to_select}
@@ -92,8 +84,8 @@ def get_weather(lon, lat, code='SFKR'):
 @DATE  SRAD  TMAX  TMIN  RAIN  DEWP  WIND
 """.format(
             INSI=code.upper(),
-            LAT=lat,
-            LONG=lon,
+            LAT=0,
+            LONG=0,
             ELEV=-99,
             TAV=-99,
             AMP=-99,
@@ -118,3 +110,7 @@ def get_weather(lon, lat, code='SFKR'):
                 wth.write('\n')
 
     return True
+
+
+if __name__ == '__main__':
+    get_weather(int(sys.argv[1]))
