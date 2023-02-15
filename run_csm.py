@@ -38,7 +38,7 @@ def run_csm(xfile):
     #
     # Create Farmland's Weather DATA
     #
-    whether_code = 'SFKR'
+    whether_code = 'JEXU'
     whether_files = [x for x in os.listdir(os.getcwd()) if x.startswith(whether_code)]
     for wth in whether_files:
         shutil.copy(os.path.join(WTH_PATH, wth), os.path.join('temp', wth))
@@ -46,7 +46,7 @@ def run_csm(xfile):
     #
     # Copy Farmland's SOL file to pwd
     #
-    soil_code = 'CO'
+    soil_code = 'SI'
     soil_files = [x for x in os.listdir(SOL_PATH) if x.startswith(soil_code)]
     for sol in soil_files:
         shutil.copy(os.path.join(SOL_PATH, sol), os.path.join('temp', sol))
@@ -54,7 +54,7 @@ def run_csm(xfile):
     #
     # Copy Crop's Sample X File to pwd
     #
-    crop_code: str = 'cb'
+    crop_code: str = 'bs'
     x_file = [x for x in os.listdir(X_PATH) if x.endswith(crop_code.upper() + 'X')][0]
 
     shutil.copy(os.path.join(X_PATH, x_file), os.path.join('temp', x_file))
@@ -62,66 +62,12 @@ def run_csm(xfile):
     #
     # Run CSM
     #
-    subprocess.call('docker run --rm -v {0}/temp:/data -w /data dssat-csm A {1}.CBX'.format(
+    subprocess.call('docker run --rm -v {0}/temp:/data -w /data dssat-csm A {1}'.format(
         os.getcwd(),
         xfile
     ), shell=True)
 
-    #
-    # Parse (TODO)
-    #
-    def parse(output_dir):
-        # Summary
-        def parse_summary(summary_out):
-            with open(os.path.join(output_dir, summary_out), 'r') as so:
-                with open('temp/Summary.OUT', 'r') as sm:
-                    content = sm.readlines()
-                sm_val = [x for x in content[-1].split(' ') if x]
-                sm_key = [x.strip('.') for x in content[-2].split(' ') if x][1:]
-            return {key: val for key, val in zip(sm_key, sm_val)}
-
-        # MgmtEvent
-        def parse_mgmtevent(mgmtevent):
-            with open(os.path.join(output_dir, mgmtevent), 'r') as me:
-                keys = ['RUN',
-                        'Date',
-                        'DOY',
-                        'DAS',
-                        'DAP',
-                        'CR',
-                        'Stage',
-                        'Operation',
-                        'Quantities']
-                events = []
-                for i, line in enumerate(me):
-                    if i >= 6:
-                        event = [x.strip('.').strip() for x in line.split('  ') if x.strip()]
-                        if len(event) == 0:
-                            break
-                        # Formatting
-                        run_no = event[0][0]
-                        event[0] = event[0][1:]
-                        if len(event[0]) <= 4:
-                            month = ''.join([x for x in event.pop(0) if not x.isdigit()])
-                            event[0] = month + ' ' + event[0]
-                        event = [run_no] + event
-                        event = [x.strip() for x in event]
-
-                        # Make to key-val
-                        if len(event) < len(keys):
-                            event.insert(6, 'NaN')
-                            if len(event) < len(keys):
-                                event.insert(8, 'NaN')
-                        event = {key: val for key, val in zip(keys, event)}
-                        events.append(event)
-            return events
-
-        result = {'summary': parse_summary('Summary.OUT'),
-                  'events': parse_mgmtevent('MgmtEvent.OUT')}
-
-        return result
-
-    return parse('temp')
+    return True
 
 
-print(run_csm('IBMC1901.CBX'))
+print(run_csm('BU019701.BSX'))
